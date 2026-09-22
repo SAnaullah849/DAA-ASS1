@@ -29,6 +29,7 @@ public final class Experiment {
             Files.createDirectories(csv.getParent());
             Files.write(csv, rows);
             writePlots(rows, csv.getParent());
+            printTerminalPlots(rows);
             System.out.println("Wrote " + (rows.size() - 1) + " measurements to " + csv);
         } catch (IOException exception) {
             throw new IllegalStateException("Could not write experiment results", exception);
@@ -83,6 +84,40 @@ public final class Experiment {
     private static void writePlots(List<String> rows, Path directory) throws IOException {
         writePlot(rows, directory.resolve("time-vs-n.svg"), 3, "Execution time (ns)", "time_ns");
         writePlot(rows, directory.resolve("recursion-depth-vs-n.svg"), 4, "Maximum recursion depth", "max_recursion_depth");
+    }
+
+    private static void printTerminalPlots(List<String> rows) {
+        String[] algorithms = {"MergeSort", "QuickSort", "DeterministicSelect", "ClosestPair"};
+        System.out.println();
+        System.out.println("TERMINAL GRAPHS - RANDOM INPUTS");
+        System.out.println("Each # is relative to the largest value for that algorithm.");
+        printTerminalPlot(rows, algorithms, 3, "Execution time (milliseconds)", true);
+        printTerminalPlot(rows, algorithms, 4, "Maximum recursion depth", false);
+        System.out.println();
+    }
+
+    private static void printTerminalPlot(List<String> rows, String[] algorithms, int column, String title, boolean timeInMilliseconds) {
+        System.out.println();
+        System.out.println("--- " + title + " ---");
+        for (String algorithm : algorithms) {
+            double max = 1;
+            for (String row : rows) {
+                String[] fields = row.split(",");
+                if (fields[0].equals(algorithm) && fields[1].equals("random")) max = Math.max(max, Double.parseDouble(fields[column]));
+            }
+            System.out.println(algorithm + ":");
+            for (String row : rows) {
+                String[] fields = row.split(",");
+                if (!fields[0].equals(algorithm) || !fields[1].equals("random")) continue;
+                double value = Double.parseDouble(fields[column]);
+                int barLength = Math.max(1, (int) Math.round(value / max * 36));
+                String bar = "#".repeat(barLength);
+                String displayed = timeInMilliseconds
+                        ? String.format(Locale.ROOT, "%.3f ms", value / 1_000_000.0)
+                        : String.format(Locale.ROOT, "%.0f", value);
+                System.out.printf(Locale.ROOT, "  n=%-5s | %-36s | %s%n", fields[2], bar, displayed);
+            }
+        }
     }
 
     private static void writePlot(List<String> rows, Path file, int column, String title, String yLabel) throws IOException {

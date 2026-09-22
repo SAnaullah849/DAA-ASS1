@@ -1,40 +1,35 @@
-# Assignment 1: Divide-and-Conquer Algorithm Analysis
+docs(report): add analysis and plots
+# Assignment 1: Divide and Conquer
 
-## Project Overview
+## What This Project Does
 
-This project implements and measures four classic divide-and-conquer algorithms in Java:
+This is a small Java project for studying how divide-and-conquer algorithms work in theory and in practice. It implements four algorithms, tests them against simple reference solutions, and records timing and operation counts.
 
-- `MergeSorter`: stable merge sort with one reusable auxiliary buffer and an insertion-sort cutoff.
-- `QuickSorter`: randomized in-place quicksort with smaller-partition recursion and larger-partition iteration.
-- `DeterministicSelector`: median-of-medians selection using groups of five.
-- `ClosestPairSolver`: recursive closest pair of points with a y-ordered strip.
+The four algorithms are:
 
-The project uses Java 17 source compatibility, Maven, JUnit 5, `System.nanoTime()`, and CSV output. The code is intentionally small and readable for an introductory DAA assignment.
+1. **Merge sort** with a reusable buffer and a small-input insertion-sort cutoff.
+2. **Randomized quicksort** using in-place partitioning and smaller-side recursion.
+3. **Deterministic select** using the median-of-medians method and groups of five.
+4. **Closest pair of points** using x-sorting, recursion, and a y-sorted strip.
 
-## Repository Structure
+The project uses Java, Maven, JUnit 5, `System.nanoTime()`, and CSV files. The implementation is deliberately straightforward so that the algorithm can be followed easily.
+
+## Folder Layout
 
 ```text
 assignment1-divide-and-conquer/
-├── src/main/java/assignment/
-│   ├── MergeSorter.java
-│   ├── QuickSorter.java
-│   ├── DeterministicSelector.java
-│   ├── ClosestPairSolver.java
-│   ├── Experiment.java
-│   ├── Point.java
-│   ├── Metrics.java
-│   └── Main.java
-├── src/test/java/assignment/
-├── docs/screenshots/
-├── docs/plots/
-├── results/results.csv
-├── pom.xml
-└── README.md
+├── src/main/java/assignment/   main Java classes
+├── src/test/java/assignment/   correctness tests
+├── docs/screenshots/           program and test-result images
+├── docs/plots/                 report plots
+├── results/results.csv         measured results
+├── pom.xml                     Maven configuration
+└── README.md                   this report
 ```
 
-## Build, Test, and Run
+## How to Run It
 
-Prerequisites: JDK 17 or newer and Maven 3.9 or newer.
+Install JDK 17 or newer and Maven 3.9 or newer. From the project folder, run:
 
 ```text
 mvn clean test
@@ -42,91 +37,113 @@ mvn package
 java -cp target/classes assignment.Main
 ```
 
-The program creates `results/results.csv`, `results/time-vs-n.svg`, and `results/recursion-depth-vs-n.svg`. The Maven test suite contains 14 tests, including the required 100 randomized deterministic-select checks.
+The first command runs the tests. The last command runs the experiments and writes:
 
-## Algorithm Analysis
+- `results/results.csv`
+- `results/time-vs-n.svg`
+- `results/recursion-depth-vs-n.svg`
 
-### MergeSort
+The test suite has 14 tests. It includes 100 random tests for deterministic select.
 
-The array is divided into two halves, recursively sorted, and merged in linear time. Small ranges use insertion sort, and every recursive call reuses the same auxiliary buffer.
+## How the Algorithms Work
 
-- Recurrence: $T(n) = 2T(n/2) + \Theta(n)$.
-- Master Theorem: $a=2$, $b=2$, and $f(n)=\Theta(n)$, so $T(n)=\Theta(n\log n)$.
-- Space: $\Theta(n)$ for the reusable buffer, plus $\Theta(\log n)$ call-stack depth.
+### Merge Sort
 
-### QuickSort
+Merge sort splits the array into two halves, sorts both halves, and then merges them. The merge step takes linear time. Small ranges use insertion sort because it is simple and efficient for short arrays.
 
-A random element is selected as pivot, then the array is partitioned in place. Only the smaller partition is recursed into; the larger partition is processed by the loop.
+- Recurrence: $T(n)=2T(n/2)+\Theta(n)$.
+- Running time: $\Theta(n\log n)$ by the Master Theorem.
+- Extra space: $\Theta(n)$ for the reusable buffer.
 
-- Expected recurrence: $T(n)=2T(n/2)+\Theta(n)$, giving expected $\Theta(n\log n)$.
-- Worst case: $T(n)=T(n-1)+\Theta(n)=\Theta(n^2)$.
-- Space: $\Theta(\log n)$ stack depth because smaller-first recursion bounds active recursive calls.
+### Randomized Quick Sort
+
+Quicksort chooses a random pivot and places smaller values on one side and larger values on the other. The implementation recursively processes the smaller side and uses a loop for the larger side.
+
+- Expected running time: $\Theta(n\log n)$.
+- Worst-case running time: $\Theta(n^2)$.
+- Stack space: $\Theta(\log n)$ because the smaller partition is handled recursively.
+
+Processing the smaller partition first is useful because it prevents a long chain of recursive calls, even when the partition sizes are unbalanced.
 
 ### Deterministic Select
 
-The input is divided into groups of five. Each group is sorted, the medians are collected, and the median of those medians becomes the pivot. Only the partition containing rank $k$ is processed next.
+This algorithm finds the element with rank $k$ without sorting the whole array. It sorts groups of five, finds the median of those group medians, and uses that value as the pivot. It then continues only in the part that can contain rank $k$.
 
-- Intuition: the pivot discards a constant fraction of the input at every level.
-- Recurrence: $T(n) \leq T(n/5)+T(7n/10)+\Theta(n)$.
-- Akra-Bazzi intuition: the linear partitioning work dominates the shrinking recursive subproblems, so $T(n)=\Theta(n)$.
-- Space: $\Theta(\log n)$ recursion depth in this implementation.
+- Recurrence: $T(n)\leq T(n/5)+T(7n/10)+\Theta(n)$.
+- Running time: $\Theta(n)$ in the worst case.
+- Reason for the guarantee: the median-of-medians pivot always removes a fixed fraction of the input.
 
-### Closest Pair
+### Closest Pair of Points
 
-Points are sorted by x-coordinate, then divided into left and right halves. The closest result from each side is combined by checking only the narrow strip around the dividing line in y-order.
+The points are sorted by x-coordinate and split into two halves. The closest pair is found in each half. The algorithm then checks a narrow strip around the dividing line, using points already ordered by y-coordinate.
 
 - Recurrence: $T(n)=2T(n/2)+\Theta(n)$.
-- Master Theorem: $T(n)=\Theta(n\log n)$.
-- Space: $\Theta(n)$ for temporary y-order arrays and $\Theta(\log n)$ recursion depth.
+- Running time: $\Theta(n\log n)$.
+- Extra space: $\Theta(n)$ for temporary point arrays.
+
+This is faster than checking every pair, which would take $\Theta(n^2)$ time.
+
+## Testing
+
+The tests check:
+
+- Empty, one-element, sorted, reverse-sorted, random, and duplicate-heavy arrays.
+- Merge sort and quicksort against `Arrays.sort()`.
+- 100 random deterministic-select cases against a sorted copy.
+- Closest pair against a brute-force $O(n^2)$ solution on small point sets.
+- Invalid ranks and too-small point lists.
 
 ## Experimental Results
 
-The experiment uses `n = 100, 1,000, 5,000, 10,000` for sorting, random/sorted/reverse-sorted/duplicate-heavy inputs, and smaller inputs for selection and closest-pair measurements. Each row records elapsed nanoseconds, maximum recursion depth, comparisons, swaps, and recursive calls.
+The experiments use sizes 100, 1,000, 5,000, and 10,000 where appropriate. They include random, sorted, reverse-sorted, and duplicate-heavy inputs. Each CSV row records:
 
-Example random-input measurements from `results/results.csv`:
+- elapsed time in nanoseconds;
+- maximum recursion depth;
+- comparisons;
+- swaps; and
+- recursive calls.
 
-| Algorithm | n=100 time (ns) | n=1,000 time (ns) | n=5,000 time (ns) | n=10,000 time (ns) |
+Here are the random-input timings currently stored in `results/results.csv`:
+
+| Algorithm | n=100 | n=1,000 | n=5,000 | n=10,000 |
 |---|---:|---:|---:|---:|
-| MergeSort | 494,800 | 917,500 | 4,361,700 | 3,578,600 |
-| QuickSort | 661,900 | 1,709,800 | 2,824,200 | 4,553,700 |
-| Deterministic Select | 153,700 | 876,900 | 1,858,200 | not measured |
-| Closest Pair | 51,116,900 | 50,960,000 | not measured | not measured |
+| Merge sort | 494,800 ns | 917,500 ns | 4,361,700 ns | 3,578,600 ns |
+| Quick sort | 661,900 ns | 1,709,800 ns | 2,824,200 ns | 4,553,700 ns |
+| Deterministic select | 153,700 ns | 876,900 ns | 1,858,200 ns | not measured |
+| Closest pair | 51,116,900 ns | 50,960,000 ns | not measured | not measured |
 
-The timing values are illustrative single-run measurements, so JVM warm-up and machine load can change them. Operation counts and recursion depth are more stable indicators for comparing growth.
+These are single-run measurements. They can change between runs because of JVM warm-up, JIT compilation, cache effects, garbage collection, and other programs running on the computer. Comparisons and recursion depth are more useful for seeing the general growth pattern.
 
 ### Plots
 
-![Time versus input size](results/time-vs-n.svg)
+![Execution time versus input size](results/time-vs-n.svg)
 
 ![Recursion depth versus input size](results/recursion-depth-vs-n.svg)
 
-Readable generated output and test-result assets are in `docs/screenshots/`.
+Additional output and test-result images are stored in `docs/screenshots/`.
 
 ## Discussion
 
-The operation counts and recursion-depth plots follow the expected patterns: merge sort grows close to $n\log n$, selection grows linearly, and closest pair has logarithmic recursion depth with linear work at each level. Timing is noisier because the JVM, JIT compilation, garbage collection, cache behavior, and operating-system scheduling affect short runs.
+The results generally agree with the theory. Merge sort grows like $n\log n$, deterministic select grows linearly, and closest pair avoids the much slower all-pairs comparison. Quicksort is usually fast, but its exact time changes with the pivot choices and the input arrangement.
 
-Input structure changes practical performance. Merge sort is relatively predictable, while quicksort can do more work on ordered or duplicate-heavy data even with a randomized pivot. Recursing on the smaller quicksort partition keeps the active stack logarithmic; the larger side is handled by iteration. Median-of-medians guarantees progress because groups of five ensure that a fixed fraction of elements is no larger than, and no smaller than, the chosen pivot. Closest pair avoids checking every pair: after solving both halves, the y-ordered strip needs only a constant number of nearby comparisons per point, which is much faster than $O(n^2)$ for large datasets.
+Sorted and duplicate-heavy data can change practical performance, especially for quicksort. Random pivots reduce the chance of repeatedly choosing a bad split. Recursing only on the smaller quicksort partition also keeps the stack small.
+
+Median-of-medians is slower than a typical quickselect on some small inputs, but it has a worst-case linear guarantee. Closest pair is much better than $O(n^2)$ for large inputs because it does not compare every possible pair; it only checks a small number of nearby points in the strip.
 
 ## Reflection
 
-This assignment made the difference between an asymptotic guarantee and a measured runtime clearer. The most useful implementation detail was tracking metrics inside the recursive methods instead of trying to infer them from elapsed time. Reusing the merge buffer also showed how a small memory decision can remove repeated allocations.
+This assignment helped me connect recurrence analysis with actual program behaviour. Measuring comparisons and recursion depth made the difference between theoretical growth and noisy wall-clock time easier to see. Reusing the merge buffer also showed how a simple memory decision can avoid repeated allocations.
 
-The main challenge was handling edge cases without weakening the algorithm: empty and single-element arrays, duplicate values, duplicate point coordinates, and rank validation. The closest-pair split especially needs to preserve exactly the left and right halves when x-coordinates are equal. Testing against simple reference implementations made that issue visible and gave confidence in the final result.
+The most difficult part was handling edge cases correctly, especially duplicate values and points with the same x-coordinate. The reference tests were useful because they exposed mistakes that were not obvious from a few manual examples.
 
-## Screenshots and GitHub Workflow
+## Screenshots and Git History
 
-The repository includes generated SVG report assets under `docs/plots/` and output/test-result assets under `docs/screenshots/`. Suggested development commits are:
+The `docs/screenshots/` folder contains readable SVG images of the program output and test results. The `docs/plots/` folder contains copies of the generated plots.
+
+The repository history records the main stages of the work:
 
 ```text
-init: project structure and tests
-feat(mergesort): implement merge sort
-feat(quicksort): implement randomized quicksort
-feat(select): implement median-of-medians
-feat(closest): implement closest pair
+init: project structure and algorithms
 feat(metrics): add performance measurements
-feat(testing): add correctness tests
-docs(report): add analysis and plots
-fix: handle edge cases
-release: v1.0
+
 ```
